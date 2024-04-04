@@ -39,6 +39,4 @@ The Collaborative Learning Hub serves as a bridge between students and teachers,
 
 
 ## Front-End Deployed link
-##          ||
-##          VV 
 [Click Here](https://connected-qkyf.onrender.com)
