@@ -1,8 +1,11 @@
 const express = require("express");
+const router = require("./route")
 const mongoose = require("mongoose");
 require("dotenv").config()
 const app = express();
 const port = 9001;
+
+app.use(express.json())
 
 const startDatabase = async () => {
   try {
@@ -28,7 +31,7 @@ const checkDatabaseConnection = (req, res, next) => {
 };
 
 app.use(checkDatabaseConnection); // Apply the middleware globally
-
+app.use("/",router)
 app.get("/", (req, res) => {  
   res.json({ message: 'Initiated backed' });
 });
