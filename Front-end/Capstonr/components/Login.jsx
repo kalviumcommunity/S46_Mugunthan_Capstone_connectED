@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Link,HashRouter } from "react-router-dom";
-
+import { Link, useNavigate } from "react-router-dom";
+import Cookies from "universal-cookie";
+import "../components/Login.css";
 function Login() {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
 
-  const [login, setLogin] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const cookies = new Cookies();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,8 +26,22 @@ function Login() {
         password: formData.password,
       });
       console.log(response.data);
-      setLogin(true);
       setError("");
+
+      // Set user-related information in cookies after successful login
+
+      cookies.set("username", formData.username);
+      // After successful login, fetch user data
+      const userDataResponse = await axios.get("http://localhost:9001/read");
+      const users = userDataResponse.data;
+      const currentUser = users.find(
+        (user) => user.username === formData.username
+      );
+      cookies.set("school", currentUser.school);
+      cookies.set("classs", currentUser.classs);
+
+      // Navigate to Post component
+      navigate("/post");
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message);
@@ -37,32 +53,42 @@ function Login() {
 
   return (
     <div className="login-container">
-      {login && <p>Welcome, {formData.username}!</p>}
-      <form onSubmit={handleSubmit}>
-        <label>
-          Username:
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
-        </label>
-        <label>
-          Password:
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-        </label>
-        <button type="submit">Login</button>
-      </form>
-      {error && <p className="error-message">{error}</p>}
-      <Link to="/signup">Register?</Link>
+      <nav id="login-nav">
+        <p>connectED</p>
+        <p id="reg">get registered</p>
+      </nav>
+      <div id="login-cont">
+        <Link to="/signup">
+          <p id="sign-btn">Signup</p>
+        </Link>
+        <form id="login-form" onSubmit={handleSubmit}>
+          <p id="login-txt">Login</p>
+          <div id="inputs">
+            <label>
+              <input
+                type="text"
+                name="username"
+                placeholder="username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+              />
+            </label>
+            <label>
+              <input
+                type="password"
+                placeholder="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </label>
+            <button type="submit">Login</button>
+          </div>
+        </form>
+        {error && <p className="error-message">{error}</p>}
+      </div>
     </div>
   );
 }

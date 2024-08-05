@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { initializeApp } from "firebase/app";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import {
   getStorage,
   ref,
@@ -24,7 +23,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app); // Initialize storage
 
-function Post() {
+function Personal() {
   const [text, setText] = useState("");
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
@@ -32,19 +31,17 @@ function Post() {
   const cookies = new Cookies();
 
   const [user, setUser] = useState("");
-  const [classs, setClasss] = useState("");
-  const [school, setSchool] = useState("");
+  const [recipient, setRecipient] = useState("");
 
   useEffect(() => {
     // Retrieve cookies and set the state
     setUser(cookies.get("username"));
-    setClasss(cookies.get("classs"));
-    setSchool(cookies.get("school"));
+    setRecipient(cookies.get("recipient"));
   }, []);
 
   useEffect(() => {
     fetchData();
-  }, [school, classs]);
+  }, [recipient]);
 
   const FILE_SIZE_LIMIT = 2 * 1024 * 1024; // 2 MB in bytes
 
@@ -114,13 +111,13 @@ function Post() {
 
   const fetchData = async () => {
     try {
-      const dataResponse = await axios.get("http://localhost:9001/display");
+      const dataResponse = await axios.get("http://localhost:9001/display/personal");
       const datas = dataResponse.data;
       const filteredData = datas.filter(
-        (item) => item.school === school && item.classs === classs
+        (item) => (item.sender === user && item.recipient === recipient) || (item.sender === recipient && item.recipient === user)
       );
       setData(filteredData);
-      console.log("Data fetched and filtered:", filteredData);
+      console.log("Personal chat data fetched and filtered:", filteredData);
     } catch (err) {
       console.error(err);
     }
@@ -129,16 +126,16 @@ function Post() {
   const saveData = async (imglink) => {
     try {
       const postData = {
-        user: user,
-        classs: classs,
-        school: school,
+        sender: user,
+        recipient: recipient,
         message: text,
         imglink: imglink,
       };
-      console.log(postData.classs, postData.school, postData.user);
+      console.log(postData.sender, postData.recipient);
+
       // Post data to backend
       const response = await axios.post(
-        "http://localhost:9001/upload",
+        "http://localhost:9001/upload/personal",
         postData
       );
       console.log(response.data);
@@ -148,7 +145,7 @@ function Post() {
       setFile(null);
       setError("");
 
-      // Fetch data again to include the new post
+      // Fetch data again to include the new message
       fetchData();
     } catch (err) {
       setError("An error occurred while posting data.");
@@ -159,15 +156,12 @@ function Post() {
   return (
     <>
       <div>
-        <h2>Posts</h2>
-     <Link to="/personal">
-     <button >Personal</button>
-     </Link>   
+        <h2>Personal Chat</h2>
         {data.map((item, index) => (
-          <div key={index} className="post">
+          <div key={index} className="chat">
             <p>{item.message}</p>
-            {item.imglink && <img src={item.imglink} alt="Post" />}
-            <p> {item.user}</p>
+            {item.imglink && <img src={item.imglink} alt="Chat" />}
+            <p> {item.sender}</p>
           </div>
         ))}
       </div>
@@ -191,4 +185,4 @@ function Post() {
   );
 }
 
-export default Post;
+export default Personal;

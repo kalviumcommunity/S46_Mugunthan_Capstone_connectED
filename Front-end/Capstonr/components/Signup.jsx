@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 function Signup() {
   const [email, setEmail] = useState("");
@@ -53,11 +53,11 @@ function Signup() {
     setOTP(e.target.value);
   };
 
-  const handleselectedUser = (e) => {
+  const handleSelectedUser = (e) => {
     setSelectedUser(e.target.value);
   };
 
-  const handlepasswordChange = (e) => {
+  const handlePasswordChange = (e) => {
     setPassword(e.target.value);
   };
 
@@ -91,6 +91,7 @@ function Signup() {
       console.error("Error verifying OTP:", error);
     }
   };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -142,20 +143,19 @@ function Signup() {
           </select>
         </label>
         <label>
-          <label>
-            School:
-            <select required value={selectedUser} onChange={handleselectedUser}>
-              {adminSchools.map((school, index) => (
-                <option key={index}>{school}</option>
-              ))}
-            </select>
-          </label>
+          School:
+          <select required value={selectedUser} onChange={handleSelectedUser}>
+            {adminSchools.map((school, index) => (
+              <option key={index}>{school}</option>
+            ))}
+          </select>
         </label>
         <label>
+          Type:
           <select required value={type} onChange={handleTypeChange}>
-            <option><input type="text"></input></option>
-            <option>Teacher</option>
-            <option>Student</option>
+            <option value="">Select Type</option>
+            <option value="Teacher">Teacher</option>
+            <option value="Student">Student</option>
           </select>
         </label>
         <label>
@@ -179,6 +179,7 @@ function Signup() {
               <input
                 type="text"
                 value={otp}
+                
                 onChange={handleOTPChange}
                 required
               />
@@ -195,15 +196,17 @@ function Signup() {
               type="password"
               required
               value={password}
-              onChange={handlepasswordChange}
-              min={6}
-              max={30}
+              onChange={handlePasswordChange}
+              minLength={6}
+              maxLength={30}
             />
           </label>
           <button type="submit">Submit</button>
         </form>
       )}
-      <Link to='/login'><p>Already have an account ?</p></Link>
+      <Link to="/login">
+        <p>Already have an account ?</p>
+      </Link>
     </div>
   );
 }

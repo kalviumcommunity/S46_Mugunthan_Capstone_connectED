@@ -1,11 +1,31 @@
 const express = require("express");
 const router = express.Router();
-const { User } = require("./model");
+const { User, Data } = require("./model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 
 const { authSchema } = require("./validate");
+
+const authenticate = (req, res, next) => {
+  const token = req.headers.authorization;
+
+  // Check if token is present or not
+  if (!token) {
+    return res
+      .status(401)
+      .json({ message: "Access denied. Token is missing." });
+  }
+
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    req.user = decoded; // Store decoded user information in the request object
+    next(); // Proceed to the next middleware
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid token." });
+  }
+};
 
 router.get("/read", async (req, res) => {
   try {
@@ -115,7 +135,12 @@ router.post("/verify-otp", async (req, res) => {
     console.log("stored", storedOTP);
     if (enteredOTP != storedOTP) {
       console.log(true);
-      return res.status(400).json({ success: false, message: "Incorrect OTP" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Incorrect OTP Please enter the valid OTP",
+        });
     }
 
     delete otpMap[token];
@@ -147,7 +172,6 @@ const sendEmail = async (otp, email) => {
   }
 };
 
-
 router.post("/login", async (req, res) => {
   try {
     console.log("hi");
@@ -161,14 +185,48 @@ router.post("/login", async (req, res) => {
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
-
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid password" });
     }
+    const token = jwt.sign(
+      { username: user.username },
+      process.env.SECRET_KEY,
+      {
+        expiresIn: "1h",
+      }
+    );
 
     res.status(200).json({ message: "Login Successful" });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+router.post("/upload", async (req, res) => {
+  try {
+    const { user, classs, message, imglink, school } = req.body;
+    const savedData = await Data.create({
+      user,
+      message,
+      imglink,
+      school,
+      classs,
+    });
+
+    res.status(201).json(savedData);
+  } catch (err) {
+    console.error(err.message);
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.get("/display", async (req, res) => {
+  try {
+    const datas = await Data.find();
+    res.json(datas);
+    console.log("data sent");
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
