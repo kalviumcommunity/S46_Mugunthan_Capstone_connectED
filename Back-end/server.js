@@ -1,8 +1,17 @@
 const express = require("express");
 const mongoose = require("mongoose");
-require("dotenv").config()
+const cors = require("cors"); // Import cors middleware
+const { fetchCollectionNames } = require("./collections");
+const router = require("./route");
+require("dotenv").config();
+
 const app = express();
 const port = 9001;
+
+app.use(express.json());
+
+
+app.use(cors());
 
 const startDatabase = async () => {
   try {
@@ -14,25 +23,16 @@ const startDatabase = async () => {
   }
 };
 
+
 startDatabase();
 
-const isConnected = () => {
-  return mongoose.connection.readyState === 1;
-};
+// Route for fetching collection names
+app.get('/collections', fetchCollectionNames);
 
-const checkDatabaseConnection = (req, res, next) => {
-  if (!isConnected()) {
-    return res.status(500).json({ message: "Database is not connected" });
-  }
-  next(); // Call next to move to the next middleware or route handler
-};
+// API routes
+app.use("/", router);
 
-app.use(checkDatabaseConnection); // Apply the middleware globally
-
-app.get("/", (req, res) => {  
-  res.json({ message: 'Initiated backed' });
-});
-
-app.listen(port, () => {
-  console.log(`server is running on port ${port}`);
+// Start the server
+const server = app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
