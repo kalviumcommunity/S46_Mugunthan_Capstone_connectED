@@ -53,4 +53,19 @@ router.delete("/delete/:id",async(req,res)=>{
           return res.status(500).json({ message: err.message });
         }
     })
+
+router.put("/post/:id", authenticate, async (req, res) => {
+  const { id } = req.params;
+  const { title, content } = req.body;
+  try {
+    const updatedPost = await Data.findByIdAndUpdate(id, { title, content }, { new: true });
+    if (!updatedPost) {
+      return res.status(404).json({ message: "Post not found." });
+    }
+    res.status(200).json({ message: "Post updated successfully.", updatedPost });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating post." });
+  }
+});
+
 module.exports=router;
