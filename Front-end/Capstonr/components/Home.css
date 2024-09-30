@@ -1,0 +1,53 @@
+/* General styling for the Home component */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  /* Container styling */
+  div {
+    background-color: #fff;
+    padding: 50px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  
+  /* Button styling */
+  button {
+    background-color: #4CAF50; /* Green */
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 10px 20px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+  }
+  
+  /* Button hover effects */
+  button:hover {
+    background-color: #45a049;
+  }
+  
+  /* Button focus styling */
+  button:focus {
+    outline: none;
+    box-shadow: 0 0 10px #719ECE;
+  }
+  
+  /* Styling for the Links inside buttons */
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
