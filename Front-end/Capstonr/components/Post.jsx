@@ -1,3 +1,5 @@
+import "../components/Post.css"
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { initializeApp } from "firebase/app";
