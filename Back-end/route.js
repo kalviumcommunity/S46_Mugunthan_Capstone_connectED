@@ -10,7 +10,6 @@ const { authSchema } = require("./validate");
 const authenticate = (req, res, next) => {
   const token = req.headers.authorization;
 
-  // Check if token is present or not
   if (!token) {
     return res
       .status(401)
@@ -18,14 +17,26 @@ const authenticate = (req, res, next) => {
   }
 
   try {
-    // Verify the token
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
-    req.user = decoded; // Store decoded user information in the request object
-    next(); // Proceed to the next middleware
+
+    // Check if the token is expired
+    const now = Math.floor(Date.now() / 1000); // Current timestamp in seconds
+    if (decoded.exp < now) {
+      return res.status(401).json({ message: "Token has expired." });
+    }
+
+    req.user = decoded;
+    next();
   } catch (error) {
-    return res.status(401).json({ message: "Invalid token." });
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: "Invalid token." });
+    } else if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: "Token expired." });
+    }
+    return res.status(500).json({ message: "Token validation failed." });
   }
 };
+
 
 router.get("/read", async (req, res) => {
   try {
@@ -75,15 +86,22 @@ router.post("/auser", async (req, res) => {
   }
 });
 
-router.delete("/delete/:id", async (req, res) => {
+const checkAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: "Access denied. Admins only." });
+  }
+  next();
+};
+
+router.delete("/delete/:id", authenticate, checkAdmin, async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
-    if (user == null) {
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json({ message: "Item deleted successfully" });
+    res.json({ message: "User deleted successfully." });
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -94,7 +112,7 @@ const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: "connecteddotcom1@gmail.com",
-    pass: "hzkawdxhmyfdbble",
+    pass: process.env.EMAIL_PASSWORD,
   },
 });
 
@@ -115,40 +133,42 @@ router.post("/send-otp", async (req, res) => {
 });
 
 const generateOTP = () => {
-  return Math.floor(Math.random() * 9000) + 1000;
+  return Math.floor(100000 + Math.random() * 900000); // Generates 6-digit OTP
 };
 
 router.post("/verify-otp", async (req, res) => {
-  console.log("mugilan");
   try {
     const { token, enteredOTP } = req.body;
-    console.log("emaisl", token, "otp", enteredOTP);
+    
+    // Ensure token and OTP are present
     if (!token || !enteredOTP) {
-      console.log("erra");
       return res
         .status(400)
-        .json({ success: false, message: "Invalid request" });
+        .json({ success: false, message: "Missing token or OTP." });
     }
 
     const storedOTP = otpMap[token];
-    console.log("otpo", otpMap);
-    console.log("stored", storedOTP);
-    if (enteredOTP != storedOTP) {
-      console.log(true);
+
+    // Handle case where OTP is not found or doesn't match
+    if (!storedOTP) {
       return res
         .status(400)
-        .json({
-          success: false,
-          message: "Incorrect OTP Please enter the valid OTP",
-        });
+        .json({ success: false, message: "OTP not found or expired." });
     }
 
+    if (enteredOTP !== storedOTP) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Incorrect OTP." });
+    }
+
+    // OTP verification success - proceed and clean up
     delete otpMap[token];
 
-    res.json({ success: true, message: "OTP verified successfully" });
+    res.json({ success: true, message: "OTP verified successfully." });
   } catch (error) {
     console.error("Error verifying OTP:", error);
-    res.status(500).json({ success: false, message: "Failed to verify OTP" });
+    res.status(500).json({ success: false, message: "Failed to verify OTP." });
   }
 });
 
@@ -174,10 +194,7 @@ const sendEmail = async (otp, email) => {
 
 router.post("/login", async (req, res) => {
   try {
-    console.log("hi");
     const { username, password } = req.body;
-    const result = await authSchema.validateAsync(req.body);
-    console.log(result);
     const user = await User.findOne({ username });
 
     if (!user) {
@@ -188,15 +205,13 @@ router.post("/login", async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid password" });
     }
-    const token = jwt.sign(
-      { username: user.username },
-      process.env.SECRET_KEY,
-      {
-        expiresIn: "1h",
-      }
-    );
 
-    res.status(200).json({ message: "Login Successful" });
+    // Generate token and include user details in the response
+    const token = jwt.sign({ username: user.username }, process.env.SECRET_KEY, {
+      expiresIn: "1h",
+    });
+
+    res.status(200).json({ message: "Login Successful", token, user: { username: user.username, email: user.email } });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
